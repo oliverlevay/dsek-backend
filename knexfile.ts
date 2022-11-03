@@ -15,6 +15,7 @@ const defaults: Config = {
     password: process.env.POSTGRES_PASSWORD,
     database: process.env.POSTGRES_DB,
     connectionString: process.env.DATABASE_URL,
+    ssl: !!process.env.DATABASE_URL,
   },
   migrations: {
     tableName: 'knex_migrations',
