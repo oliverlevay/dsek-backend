@@ -1,0 +1,320 @@
+extend type Query {
+  me: Member
+  members(
+    page: Int! = 0
+    perPage: Int! = 10
+    filter: MemberFilter
+  ): MemberPagination
+  member(id: UUID, student_id: String): Member
+  memberById(id: UUID): Member
+  positions(
+    page: Int! = 0
+    perPage: Int! = 10
+    filter: PositionFilter
+  ): PositionPagination
+  committees(
+    page: Int! = 0
+    perPage: Int! = 10
+    filter: CommitteeFilter
+  ): CommitteePagination
+  mandatePagination(
+    page: Int! = 0
+    perPage: Int! = 10
+    filter: MandateFilter
+  ): MandatePagination
+  door(name: String!): Door
+  doors: [Door!]
+  api(name: String!): Api
+  apis: [Api!]
+  alias(email: String!): MailAlias
+  aliases: [MailAlias]
+  """
+  returns all apis the signed in member has access to.
+  """
+  apiAccess: [Api!]
+  resolveAlias(alias: String!): [String]
+  resolveRecipients: [MailRecipient]!
+  userHasAccessToAlias(alias: String!, student_id: String!): Boolean!
+}
+
+extend type Mutation {
+  member: MemberMutations
+  position: PositionMutations
+  committee: CommitteeMutations
+  mandate: MandateMutations
+  access: AccessMutations
+  admin: AdminMutations
+  alias: MailAliasMutations
+}
+
+type Member @key(fields: "id") {
+  id: UUID!
+  student_id: String
+  first_name: String
+  nickname: String
+  last_name: String
+  class_programme: String
+  class_year: Int
+  picture_path: String
+  mandates(onlyActive: Boolean = false): [Mandate!]
+}
+
+type MemberPagination {
+  members: [Member]!
+  pageInfo: PaginationInfo!
+}
+
+type MailRecipient {
+  alias: String!
+  emails: [String!]
+}
+
+type MailAlias @key(fields: "email") {
+  email: String!
+  policies: [MailAliasPolicy]!
+}
+
+type MailAliasPolicy @key(fields: "id") {
+  id: UUID!
+  position: Position!
+}
+
+type Position @key(fields: "id") {
+  id: String!
+  name: String
+  nameEn: String
+  committee: Committee
+  email: String
+  active: Boolean
+  boardMember: Boolean
+  activeMandates: [Mandate]
+}
+
+type PositionPagination {
+  positions: [Position]!
+  pageInfo: PaginationInfo!
+}
+
+type Committee @key(fields: "id") {
+  id: UUID!
+  name: String
+  shortName: String
+}
+
+type CommitteePagination {
+  committees: [Committee]!
+  pageInfo: PaginationInfo!
+}
+
+scalar Date
+scalar UUID
+
+type Mandate @key(fields: "id") {
+  id: UUID!
+  start_date: Date!
+  end_date: Date!
+  position: Position
+  member: Member
+}
+
+type FastMandate @key(fields: "id") {
+  id: UUID!
+  start_date: Date!
+  end_date: Date!
+  position: Position
+  member: Member
+}
+
+type MandatePagination {
+  mandates: [FastMandate]!
+  pageInfo: PaginationInfo!
+}
+
+type Door @key(fields: "name") {
+  name: String!
+  id: String
+  accessPolicies: [AccessPolicy!]
+  """
+  returns all stundet ids that have active policies for this door.
+  """
+  studentIds: [String!]
+}
+
+type Api @key(fields: "name") {
+  name: String!
+  accessPolicies: [AccessPolicy!]
+}
+
+type AccessPolicy @key(fields: "id") {
+  id: UUID!
+  accessor: String!
+  start_datetime: Date
+  end_datetime: Date
+}
+
+type PaginationInfo {
+  totalPages: Int!
+  totalItems: Int!
+  page: Int!
+  perPage: Int!
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+}
+
+input MemberFilter {
+  id: UUID
+  student_id: String
+  first_name: String
+  nickname: String
+  last_name: String
+  class_programme: String
+  class_year: Int
+}
+
+input CommitteeFilter {
+  id: UUID
+  name: String
+}
+
+input PositionFilter {
+  id: String
+  name: String
+  committee_id: UUID
+}
+
+input MandateFilter {
+  id: UUID
+  position_id: String
+  position_ids: [String!]
+  member_id: UUID
+  start_date: Date
+  end_date: Date
+}
+
+type MemberMutations {
+  create(input: CreateMember!): Member
+  update(id: UUID!, input: UpdateMember!): Member
+  remove(id: UUID!): Member
+}
+
+type PositionMutations {
+  create(input: CreatePosition!): Position
+  update(id: String!, input: UpdatePosition!): Position
+  remove(id: String!): Position
+}
+
+type CommitteeMutations {
+  create(input: CreateCommittee!): Committee
+  update(id: UUID!, input: UpdateCommittee!): Committee
+  remove(id: UUID!): Committee
+}
+
+type MandateMutations {
+  create(input: CreateMandate!): Mandate
+  update(id: UUID!, input: UpdateMandate!): Mandate
+  remove(id: UUID!): Mandate
+}
+
+type AccessMutations {
+  door: DoorMutations
+  policy: PolicyMutations
+}
+
+type DoorMutations {
+  create(input: CreateDoor!): Door
+  remove(name: String!): Door
+}
+
+type PolicyMutations {
+  createDoorAccessPolicy(input: CreateDoorAccessPolicy!): AccessPolicy
+  createApiAccessPolicy(input: CreateApiAccessPolicy!): AccessPolicy
+  remove(id: UUID!): AccessPolicy
+}
+
+type AdminMutations {
+  updateSearchIndex: Boolean
+  syncMandatesWithKeycloak: Boolean
+  seed: Boolean
+}
+
+type MailAliasMutations {
+  create(input: CreateMailAlias!): MailAlias
+  remove(id: UUID!): MailAlias
+}
+
+input CreateMember {
+  student_id: String!
+  first_name: String!
+  nickname: String
+  last_name: String!
+  class_programme: String!
+  class_year: Int!
+  picture_path: String
+}
+
+input UpdateMember {
+  first_name: String
+  nickname: String
+  last_name: String
+  class_programme: String
+  class_year: Int
+  picture_path: String
+}
+
+input CreatePosition {
+  id: String!
+  name: String!
+  committee_id: UUID
+  email: String
+  active: Boolean
+  boardMember: Boolean
+}
+
+input UpdatePosition {
+  name: String
+  committee_id: UUID
+}
+
+input CreateCommittee {
+  name: String!
+}
+
+input UpdateCommittee {
+  name: String
+}
+
+input CreateMandate {
+  position_id: String!
+  member_id: UUID!
+  start_date: Date!
+  end_date: Date!
+}
+
+input UpdateMandate {
+  position_id: String
+  member_id: UUID
+  start_date: Date
+  end_date: Date
+}
+
+input CreateDoor {
+  name: String!
+  id: String
+}
+
+input CreateDoorAccessPolicy {
+  doorName: String!
+  who: String!
+  startDatetime: Date
+  endDatetime: Date
+}
+
+input CreateApiAccessPolicy {
+  apiName: String!
+  who: String!
+}
+
+input CreateMailAlias {
+  email: String!
+  position_id: String!
+}
