@@ -10,6 +10,9 @@ import { addMinutes } from '../shared/utils';
 import * as gql from '../types/graphql';
 import * as sql from '../types/webshop';
 
+// generate a number between 1 and 1000
+const generateTransactionId = () => Math.floor(Math.random() * 1000) + 1;
+
 const CART_EXPIRATION_MINUTES = 30;
 
 export const TABLE = {
@@ -191,12 +194,14 @@ export default class WebshopAPI extends dbUtils.KnexDataSource {
     inventoryId: UUID,
     quantity: number = 1,
   ) {
+    const transactionId = generateTransactionId();
+    logger.info(`Starting transaction ${transactionId} for user ${cart.student_id}`);
     return this.knex.transaction(async (trx) => {
       const inventory = await trx<sql.ProductInventory>(TABLE.PRODUCT_INVENTORY)
         .where({ id: inventoryId }).first();
       if (!inventory) throw new Error(`Inventory with id ${inventoryId} not found`);
       if (inventory.quantity < quantity) throw new Error('Article sold out!');
-      logger.info(`${cart.student_id} wants ${quantity}, ${inventory.quantity} available, updating...`);
+      logger.info(`Transaction ${transactionId}: ${cart.student_id} wants ${quantity}, ${inventory.quantity} available, updating...`);
       await trx<sql.ProductInventory>(TABLE.PRODUCT_INVENTORY).where({ id: inventoryId }).update({
         quantity: inventory.quantity - 1,
       });
@@ -227,6 +232,7 @@ export default class WebshopAPI extends dbUtils.KnexDataSource {
         total_price: cart.total_price + product.price,
         total_quantity: cart.total_quantity + quantity,
       });
+      logger.info(`Transaction ${transactionId}: ${cart.student_id} added ${quantity} ${product.name} to cart.`);
     });
   }
 
