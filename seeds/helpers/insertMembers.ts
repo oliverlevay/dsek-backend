@@ -64,19 +64,5 @@ export default async function insertMembers(knex: Knex): Promise<string[]> {
       class_programme: 'D',
       class_year: 2020,
     },
-    {
-      student_id: 'al2810ka-s',
-      first_name: 'Alvin',
-      last_name: 'Karlsson',
-      class_programme: 'D',
-      class_year: 2021,
-    },
-    {
-      student_id: 'ma0230je-s',
-      first_name: 'Martin',
-      last_name: 'Jernstedt',
-      class_programme: 'D',
-      class_year: 2021,
-    },
   ]).returning('id')).map((v) => v.id);
 }
