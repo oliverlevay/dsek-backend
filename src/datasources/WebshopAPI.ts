@@ -461,4 +461,26 @@ export default class WebshopAPI extends dbUtils.KnexDataSource {
       currency: updatedPayment.payment_currency,
     };
   }
+
+  async getPayment(
+    ctx: context.UserContext,
+    id: UUID,
+  ): Promise<gql.Maybe<gql.Payment>> {
+    return this.withAccess('webshop:use', ctx, async () => {
+      if (!ctx?.user?.student_id) throw new Error('You are not logged in');
+      const payment = await this.knex<sql.Payment>(TABLE.PAYMENT)
+        .where({ id })
+        .first();
+      if (!payment) return undefined;
+      return {
+        id: payment.id,
+        createdAt: payment.created_at,
+        updatedAt: payment.updated_at,
+        paymentStatus: payment.payment_status,
+        paymentMethod: payment.payment_method,
+        amount: payment.payment_amount,
+        currency: payment.payment_currency,
+      };
+    });
+  }
 }
