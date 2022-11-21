@@ -207,7 +207,8 @@ export default class WebshopAPI extends dbUtils.KnexDataSource {
       }).first();
 
       // Additional check for quantity
-      const inventoryQuantity = (await trx<sql.ProductInventory>(TABLE.PRODUCT_INVENTORY).returning('quantity').first())?.quantity!;
+      const inventoryQuantity = (await trx<sql.ProductInventory>(TABLE.PRODUCT_INVENTORY)
+        .where({ id: inventoryId }).returning('quantity').first())?.quantity!;
       if (inventoryQuantity < quantity) throw new Error('Not enough inventory');
 
       if (cartItem) {
