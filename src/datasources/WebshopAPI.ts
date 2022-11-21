@@ -197,14 +197,12 @@ export default class WebshopAPI extends dbUtils.KnexDataSource {
     const transactionId = generateTransactionId();
     logger.info(`Starting transaction ${transactionId} for user ${cart.student_id}`);
     return this.knex.transaction(async (trx) => {
-      const inventory = await trx<sql.ProductInventory>(TABLE.PRODUCT_INVENTORY)
-        .where({ id: inventoryId }).first();
-      if (!inventory) throw new Error(`Inventory with id ${inventoryId} not found`);
-      if (inventory.quantity < quantity) throw new Error('Article sold out!');
-      logger.info(`Transaction ${transactionId}: ${cart.student_id} wants ${quantity}, ${inventory.quantity} available, updating...`);
-      await trx<sql.ProductInventory>(TABLE.PRODUCT_INVENTORY).where({ id: inventoryId }).update({
-        quantity: inventory.quantity - 1,
-      });
+      const inventory = (await trx<sql.ProductInventory>(TABLE.PRODUCT_INVENTORY)
+        .where({ id: inventoryId })
+        .andWhere('quantity', '>=', quantity)
+        .decrement('quantity', quantity)
+        .returning('*'))[0];
+      if (!inventory) throw new Error('Item out of stock');
       const product = await trx<sql.Product>(TABLE.PRODUCT)
         .where({ id: inventory.product_id }).first();
       if (!product) throw new Error(`Product with id ${inventory.product_id} not found`);
