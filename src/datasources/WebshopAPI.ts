@@ -388,9 +388,10 @@ export default class WebshopAPI extends dbUtils.KnexDataSource {
         .first();
       if (!myCart) throw new Error('Cart not found');
       if (myCart.total_quantity === 0) throw new Error('Cart is empty');
+      if (!process.env.SWISH_CALLBACK_URL) throw new Error('No callback url set');
       const data: sql.SwishData = {
         payeePaymentReference: '0123456789',
-        callbackUrl: 'https://dsek-frontend.herokuapp.com/api/webshop/payment-callback',
+        callbackUrl: process.env.SWISH_CALLBACK_URL,
         payeeAlias: '1231181189',
         currency: 'SEK',
         payerAlias: phoneNumber,
@@ -408,6 +409,8 @@ export default class WebshopAPI extends dbUtils.KnexDataSource {
         student_id: myCart.student_id,
       }).returning('*'))[0];
       if (!payment) throw new Error('Failed to create payment');
+
+      if (!process.env.SWISH_URL) throw new Error('No swish url set');
 
       const url = `${process.env.SWISH_URL}/api/v2/paymentrequests/${paymentId}`;
       logger.info(`Initiated payment with id: ${paymentId}`);
