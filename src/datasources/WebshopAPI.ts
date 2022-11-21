@@ -195,7 +195,8 @@ export default class WebshopAPI extends dbUtils.KnexDataSource {
       const inventory = await trx<sql.ProductInventory>(TABLE.PRODUCT_INVENTORY)
         .where({ id: inventoryId }).first();
       if (!inventory) throw new Error(`Inventory with id ${inventoryId} not found`);
-      if (inventory.quantity < quantity) throw new Error('Not enough inventory');
+      if (inventory.quantity < quantity) throw new Error('Article sold out!');
+      logger.info(`${cart.student_id} wants ${quantity}, ${inventory.quantity} available, updating...`);
       await trx<sql.ProductInventory>(TABLE.PRODUCT_INVENTORY).where({ id: inventoryId }).update({
         quantity: inventory.quantity - 1,
       });
