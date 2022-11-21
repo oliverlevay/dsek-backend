@@ -239,6 +239,9 @@ export default class WebshopAPI extends dbUtils.KnexDataSource {
       const user = await this.knex<sql.UserAddingToCart>('users_adding_to_cart')
         .where({ student_id: ctx.user.student_id }).first();
       if (user) throw new Error('You are already adding to your cart');
+      await this.knex<sql.UserAddingToCart>('users_adding_to_cart').insert({
+        student_id: ctx.user.student_id,
+      });
       let myCart = await this
         .knex<sql.Cart>(TABLE.CART)
         .where({ student_id: ctx?.user?.student_id })
