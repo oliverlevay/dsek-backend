@@ -10,8 +10,12 @@ import { addMinutes } from '../shared/utils';
 import * as gql from '../types/graphql';
 import * as sql from '../types/webshop';
 
-// generate a number between 1 and 1000
-const generateTransactionId = () => Math.floor(Math.random() * 1000) + 1;
+let transactions = 0;
+
+const generateTransactionId = () => {
+  transactions += 1;
+  return transactions;
+};
 
 const CART_EXPIRATION_MINUTES = 30;
 
