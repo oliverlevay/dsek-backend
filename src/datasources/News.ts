@@ -1,7 +1,7 @@
 import { UserInputError, ApolloError } from 'apollo-server';
 import { Expo, ExpoPushMessage } from 'expo-server-sdk';
 import {
-  dbUtils, minio, context, UUID, createLogger,
+  dbUtils, minio, context, UUID, createLogger, meilisearch,
 } from '../shared';
 import * as gql from '../types/graphql';
 import * as sql from '../types/news';
@@ -9,6 +9,24 @@ import { Member as sqlMember } from '../types/database';
 import { slugify } from '../shared/utils';
 
 const notificationsLogger = createLogger('notifications');
+
+export async function addArticleToSearchIndex(article: sql.Article) {
+  if (process.env.NODE_ENV !== 'test') {
+    const index = meilisearch.index('articles');
+    await index.addDocuments([{
+      id: article.id,
+      header: article.header,
+      header_en: article.header_en,
+      body: article.body,
+      body_en: article.body_en,
+      slug: article.slug,
+      image_url: article.image_url,
+      author_id: article.author_id,
+      author_type: article.author_type,
+      published_datetime: article.published_datetime,
+    }]);
+  }
+}
 
 export function convertTag(
   tag: sql.Tag,
@@ -248,13 +266,15 @@ export default class News extends dbUtils.KnexDataSource {
         [tags] = await Promise.all([getPromise, addPromise]);
       }
       if (articleInput.sendNotification) {
+        const notificationBody = articleInput.notificationBody || articleInput.notificationBodyEn;
         this.sendNotifications(
           article.header,
-          article.body,
+          (notificationBody?.length ?? 0) > 0 ? notificationBody : undefined,
           articleInput.tagIds,
           { id: article.id },
         );
       }
+      addArticleToSearchIndex(article);
       return {
         article: convertArticle({
           article, numberOfLikes: 0, isLikedByMe: false, tags,
@@ -274,18 +294,7 @@ export default class News extends dbUtils.KnexDataSource {
       if (!originalArticle) {
         throw new UserInputError(`Article with id ${id} does not exist`);
       }
-      const existingTags = await this.getTags(id);
-      const updateTags = async () => {
-        if (articleInput.tagIds?.length) {
-          const promise1 = this.knex<sql.ArticleTag>('article_tags').where({ article_id: id }).whereNotIn('tag_id', articleInput.tagIds).del();
-          const existingPromise = this.knex<sql.ArticleTag>('article_tags').where({ article_id: id }).whereIn('tag_id', articleInput.tagIds);
-          const existing = (await Promise.all([existingPromise, promise1]))[0].map((e) => e.tag_id);
-          await this.addTags(ctx, id, articleInput.tagIds.filter((t) => !existing.includes(t)));
-        } else if (existingTags.length) {
-          await this.removeTags(ctx, id, existingTags.map((t) => t.id));
-        }
-      };
-      const updateTagsPromise = updateTags();
+
       const uploadData = await this.getUploadData(
         ctx,
         articleInput.imageName,
@@ -313,7 +322,9 @@ export default class News extends dbUtils.KnexDataSource {
       await this.knex('articles').where({ id }).update(updatedArticle);
       const article = await dbUtils.unique(this.knex<sql.Article>('articles').where({ id }));
       if (!article) throw new UserInputError('id did not exist');
-      await updateTagsPromise;
+
+      await this.removeAllTagsFromArticle(ctx, id);
+      if (articleInput.tagIds?.length) await this.addTags(ctx, id, articleInput.tagIds);
 
       return {
         article: convertArticle({ article }),
@@ -462,6 +473,18 @@ export default class News extends dbUtils.KnexDataSource {
     });
   }
 
+  removeAllTagsFromArticle(
+    ctx: context.UserContext,
+    articleId: UUID,
+  ): Promise<number> {
+    return this.withAccess(['news:article:update', 'news:article:create'], ctx, async () => {
+      const deletedRowAmount = await this.knex<sql.ArticleTag>('article_tags').where({
+        article_id: articleId,
+      }).del();
+      return deletedRowAmount;
+    });
+  }
+
   async getUploadData(ctx: context.UserContext, fileName: string | undefined, header: string):
   Promise<gql.Maybe<gql.UploadData>> {
     return this.withAccess(['news:article:create', 'news:article:update'], ctx, async () => {
@@ -479,7 +502,7 @@ export default class News extends dbUtils.KnexDataSource {
     });
   }
 
-  private async sendNotifications(title: string, body: string, tagIds?: UUID[], data?: Object) {
+  private async sendNotifications(title?: string, body?: string, tagIds?: UUID[], data?: Object) {
     const expo = new Expo();
     const uniqueTokens: string[] = (await this.knex<sql.Token>('expo_tokens').select('expo_token')).map((token) => token.expo_token);
 
@@ -504,15 +527,10 @@ export default class News extends dbUtils.KnexDataSource {
             `Push token ${token} is not a valid Expo push token`,
           );
         } else {
-          const notificationTitle = title.substring(0, 178);
-          let notificationBody = '';
-          if (body) {
-            notificationBody = body?.substring(0, 178 - notificationTitle.length);
-          }
           const message: ExpoPushMessage = {
             to: token,
-            title: notificationTitle,
-            body: notificationBody,
+            title,
+            body,
             data,
           };
           messages.push(message);
