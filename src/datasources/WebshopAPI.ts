@@ -172,7 +172,7 @@ export default class WebshopAPI extends dbUtils.KnexDataSource {
       return sqlProducts.map((product) => {
         const category = convertProductCategory(categories
           .find((c) => c.id === product.category_id));
-        const inventory: gql.Inventory[] = inventories
+        const inventory: gql.CartInventory[] = inventories
           .filter((i) => i.product_id === product.id)
           .map((inv) => {
             const cartItem = cartItems.find((ci) => ci.product_inventory_id === inv.id);
@@ -181,6 +181,7 @@ export default class WebshopAPI extends dbUtils.KnexDataSource {
               .find((d) => d.id === inv.discount_id));
             return {
               id: cartItem.id,
+              inventoryId: inv.id,
               quantity: cartItem.quantity,
               discount: discount || undefined,
               variant: inv.variant,
