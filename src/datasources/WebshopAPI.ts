@@ -232,7 +232,7 @@ export default class WebshopAPI extends dbUtils.KnexDataSource {
         });
       }
       await trx<sql.Cart>(TABLE.CART).where({ id: cart.id }).update({
-        total_price: cart.total_price + product.price,
+        total_price: cart.total_price + (product.price * quantity),
         total_quantity: cart.total_quantity + quantity,
       });
       logger.info(`Transaction ${transactionId}: ${cart.student_id} added ${quantity} ${product.name} to cart.`);
@@ -304,8 +304,8 @@ export default class WebshopAPI extends dbUtils.KnexDataSource {
         quantity: inventory.quantity + quantity,
       });
       await trx<sql.Cart>(TABLE.CART).where({ id: cart.id }).update({
-        total_price: cart.total_price - (cartItem.quantity * product.price),
-        total_quantity: cart.total_quantity - cartItem.quantity,
+        total_price: cart.total_price - (quantity * product.price),
+        total_quantity: cart.total_quantity - quantity,
       });
     });
     const updatedCart = await this.knex<sql.Cart>(TABLE.CART).where({ id: cart.id }).first();
