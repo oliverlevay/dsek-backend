@@ -236,6 +236,9 @@ export default class WebshopAPI extends dbUtils.KnexDataSource {
   ): Promise<gql.Cart> {
     return this.withAccess('webshop:use', ctx, async () => {
       if (!ctx?.user?.student_id) throw new Error('User is not logged in');
+      const user = await this.knex<sql.UserAddingToCart>('users_adding_to_cart')
+        .where({ student_id: ctx.user.student_id }).first();
+      if (user) throw new Error('You are already adding to your cart');
       let myCart = await this
         .knex<sql.Cart>(TABLE.CART)
         .where({ student_id: ctx?.user?.student_id })
@@ -246,6 +249,8 @@ export default class WebshopAPI extends dbUtils.KnexDataSource {
       await this.inventoryToCartTransaction(myCart, inventoryId, quantity);
       const updatedCart = await this.knex<sql.Cart>(TABLE.CART).where({ id: myCart.id }).first();
       if (!updatedCart) throw new Error('Failed to update cart');
+      await this.knex<sql.UserAddingToCart>('users_adding_to_cart')
+        .where({ student_id: ctx.user.student_id }).del();
       return convertCart(updatedCart);
     });
   }
