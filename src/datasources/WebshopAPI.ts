@@ -279,25 +279,22 @@ export default class WebshopAPI extends dbUtils.KnexDataSource {
       .where({ id: cartId })
       .first();
     if (!cart) throw new Error('Cart not found');
-    const cartItem = await this.knex<sql.CartItem>(TABLE.CART_ITEM)
-      .where({ cart_id: cart.id, product_inventory_id: inventoryId })
-      .first();
-    if (!cartItem) throw new Error('Cart item not found');
-    if (cartItem.quantity < quantity) throw new Error('Not enough items in cart');
     await this.knex.transaction(async (trx) => {
+      const cartItem = (await this.knex<sql.CartItem>(TABLE.CART_ITEM)
+        .where({ cart_id: cart.id, product_inventory_id: inventoryId })
+        .andWhere('quantity', '>=', quantity)
+        .decrement('quantity', quantity)
+        .returning('*'))[0];
+      if (!cartItem) throw new Error('Item not in cart');
+      if (cartItem.quantity === 0) {
+        await trx<sql.CartItem>(TABLE.CART_ITEM).where({ id: cartItem.id }).del();
+      }
       const inventory = await trx<sql.ProductInventory>(TABLE.PRODUCT_INVENTORY)
         .where({ id: inventoryId }).first();
       if (!inventory) throw new Error(`Inventory with id ${inventoryId} not found`);
       const product = await trx<sql.Product>(TABLE.PRODUCT)
         .where({ id: inventory.product_id }).first();
       if (!product) throw new Error(`Product with id ${inventory.product_id} not found`);
-      if (cartItem.quantity === quantity) {
-        await trx<sql.CartItem>(TABLE.CART_ITEM).where({ id: cartItem.id }).del();
-      } else {
-        await trx<sql.CartItem>(TABLE.CART_ITEM).where({ id: cartItem.id }).update({
-          quantity: cartItem.quantity - quantity,
-        });
-      }
       await trx<sql.ProductInventory>(TABLE.PRODUCT_INVENTORY).where({ id: inventoryId }).update({
         quantity: inventory.quantity + quantity,
       });
