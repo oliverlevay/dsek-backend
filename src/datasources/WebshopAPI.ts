@@ -19,6 +19,16 @@ const generateTransactionId = () => {
 };
 
 const CART_EXPIRATION_MINUTES = 30;
+const TRANSACTION_COST = 2;
+const TRANSACTION_ITEM: gql.CartItem = {
+  id: '8ed3a794-2b6b-4f5f-8486-09a649477847',
+  name: 'Transaktionsavgift',
+  description: 'Hur mycket pengar swish tar från oss',
+  price: TRANSACTION_COST,
+  maxPerUser: 1,
+  imageUrl: 'https://play-lh.googleusercontent.com/NiU9oukn_XtdpjyODVezYIxeZ3Obs04bH9VZa0MAhZN4s9x5mG9O1lO_ZF37CDKck_8K',
+  inventory: [],
+};
 
 export const TABLE = {
   CART: 'cart',
@@ -127,7 +137,7 @@ export default class WebshopAPI extends dbUtils.KnexDataSource {
     const cart = (await this.knex<sql.Cart>(TABLE.CART).insert({
       student_id: ctx?.user?.student_id,
       expires_at: addMinutes(new Date(), CART_EXPIRATION_MINUTES),
-      total_price: 0,
+      total_price: TRANSACTION_COST,
       total_quantity: 0,
     }).returning('*'))[0];
     if (!cart) throw new Error('Failed to create cart');
@@ -199,7 +209,7 @@ export default class WebshopAPI extends dbUtils.KnexDataSource {
         .whereIn('id', sqlProducts.map((p) => p.category_id));
       const discounts = await this.knex<sql.ProductDiscount>(TABLE.PRODUCT_DISCOUNT)
         .whereIn('id', inventories.filter((i) => i.discount_id).map((i) => i.discount_id!));
-      return sqlProducts.map((product) => {
+      const result = sqlProducts.map((product) => {
         const category = convertProductCategory(categories
           .find((c) => c.id === product.category_id));
         const inventory: gql.CartInventory[] = inventories
@@ -221,6 +231,7 @@ export default class WebshopAPI extends dbUtils.KnexDataSource {
           product, category, inventory,
         });
       });
+      return [...result, TRANSACTION_ITEM];
     });
   }
 
