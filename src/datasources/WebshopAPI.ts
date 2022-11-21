@@ -403,6 +403,8 @@ export default class WebshopAPI extends dbUtils.KnexDataSource {
         payment_id: paymentId,
         payment_method: 'SWISH',
         payment_status: 'PENDING',
+        payment_amount: myCart.total_price,
+        payment_currency: 'SEK',
         student_id: myCart.student_id,
       }).returning('*'))[0];
       if (!payment) throw new Error('Failed to create payment');
