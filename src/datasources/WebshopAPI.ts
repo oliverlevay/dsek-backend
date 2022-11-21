@@ -199,7 +199,7 @@ export default class WebshopAPI extends dbUtils.KnexDataSource {
     quantity: number = 1,
   ) {
     const transactionId = generateTransactionId();
-    logger.info(`Starting transaction ${transactionId} for user ${cart.student_id}`);
+    logger.info(`Transaction ${transactionId}: ${cart.student_id} adding ${quantity} of ${inventoryId} to cart ${cart.id}`);
     return this.knex.transaction(async (trx) => {
       const inventory = (await trx<sql.ProductInventory>(TABLE.PRODUCT_INVENTORY)
         .where({ id: inventoryId })
