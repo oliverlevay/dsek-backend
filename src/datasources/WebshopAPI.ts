@@ -663,7 +663,8 @@ export default class WebshopAPI extends dbUtils.KnexDataSource {
   ): Promise<any> {
     const items = await this.knex<sql.UserInventoryItem>(TABLE.USER_INVENTORY_ITEM)
       .where({ user_inventory_id: userInventoryId })
-      .andWhere('consumed_at', '>', yesterday())
+      .where({ consumed_at: undefined })
+      .orWhere('consumed_at', '>', yesterday())
       .orderBy('paid_at', 'desc');
     return items.map((item) => convertUserInventoryItem(item));
   }
