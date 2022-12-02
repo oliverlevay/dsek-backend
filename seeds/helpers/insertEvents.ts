@@ -29,7 +29,18 @@ export default async function insertEvents(
       end_datetime: '2021-04-15 19:30:00',
       link: 'https://google.se',
       author_id: memberIds[3],
-      organizer: 'Lucas',
+      organizer: 'Grace',
+    },
+    {
+      title: 'Event 1',
+      description: 'event 1 är banger',
+      short_description: 'kort banger',
+      removed_at: new Date('1993-11-23'),
+      start_datetime: '2021-03-29 10:30:01',
+      end_datetime: '2021-04-15 19:30:00',
+      link: 'https://google.se',
+      author_id: memberIds[3],
+      organizer: 'Grace',
     },
   ]).returning('id')).map(((row) => row.id));
 }

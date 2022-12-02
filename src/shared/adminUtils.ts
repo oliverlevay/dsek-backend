@@ -70,7 +70,10 @@ export async function indexEventsMeilisearch(knex: Knex, logger: Logger) {
   logger.info('Indexing events in meilisearch.');
   try {
     await meilisearch.deleteIndexIfExists('events');
-    const events = await knex.select('id', 'slug', 'title', 'title_en', 'location', 'organizer', 'description', 'description_en', 'short_description', 'short_description_en', 'start_datetime', 'end_datetime').from('events');
+    const events = await knex
+      .select('id', 'slug', 'title', 'title_en', 'location', 'organizer', 'description', 'description_en', 'short_description', 'short_description_en', 'start_datetime', 'end_datetime')
+      .from('events')
+      .whereNull('removed_at');
     const index = meilisearch.index('events');
     addDataToIndexByChunks(index, events);
     logger.info('Meilisearch events index successful');
@@ -86,7 +89,9 @@ export async function indexArticlesMeilisearch(knex: Knex, logger: Logger) {
   logger.info('Indexing articles in meilisearch.');
   try {
     await meilisearch.deleteIndexIfExists('articles');
-    const articles = await knex.select('id', 'header', 'header_en', 'body', 'body_en', 'slug', 'image_url', 'author_id', 'author_type', 'published_datetime').from('articles');
+    const articles = await knex
+      .select('id', 'header', 'header_en', 'body', 'body_en', 'slug', 'image_url', 'author_id', 'author_type', 'published_datetime')
+      .from('articles').whereNull('removed_at');
     const index = meilisearch.index('articles');
     await addDataToIndexByChunks(index, articles);
     logger.info('Meilisearch articles index successful');
@@ -100,14 +105,7 @@ export async function indexArticlesMeilisearch(knex: Knex, logger: Logger) {
 
 export async function indexMeilisearch(knex: Knex, logger: Logger) {
   logger.info('Indexing meilisearch.');
-  try {
-    await indexMembersMeilisearch(knex, logger);
-    await indexEventsMeilisearch(knex, logger);
-    await indexArticlesMeilisearch(knex, logger);
-    return true;
-  } catch (e: any) {
-    logger.info('Meilisearch index failed');
-    logger.error(e);
-    return false;
-  }
+  return await indexMembersMeilisearch(knex, logger)
+  && await indexEventsMeilisearch(knex, logger)
+  && await indexArticlesMeilisearch(knex, logger);
 }

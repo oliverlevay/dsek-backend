@@ -1,6 +1,7 @@
 import { context } from '../shared';
 import { DataSources } from '../datasources';
-import { Mandate, Member, Resolvers } from '../types/graphql';
+import { Resolvers } from '../types/graphql';
+import { getAuthor } from '../datasources/News';
 
 interface DataSourceContext {
   dataSources: DataSources;
@@ -29,36 +30,24 @@ const resolvers: Resolvers<context.UserContext & DataSourceContext> = {
     token(_, { expo_token }, { dataSources }) {
       return dataSources.notificationsAPI.getToken(expo_token);
     },
+    alerts(_, __, { dataSources }) {
+      return dataSources.newsAPI.getAlerts();
+    },
+
   },
   Mutation: {
     article: () => ({}),
     markdown: () => ({}),
     token: () => ({}),
     tags: () => ({}),
+    alert: () => ({}),
   },
   Article: {
     __resolveReference({ id }, { user, roles, dataSources }) {
       return dataSources.newsAPI.getArticle({ user, roles }, id);
     },
     async author(article, _, { user, roles, dataSources }) {
-      if (article.author.__typename === 'Member') {
-        const member: Member = {
-          ...await dataSources
-            .memberAPI.getMember({ user, roles }, { id: article.author.id }),
-          __typename: 'Member',
-          id: article.author.id,
-        };
-        return member;
-      }
-      const mandate: Mandate = {
-        start_date: '',
-        end_date: '',
-        ...await dataSources
-          .mandateAPI.getMandate({ user, roles }, article.author.id),
-        __typename: 'Mandate',
-        id: article.author.id,
-      };
-      return mandate;
+      return getAuthor(article, dataSources, { user, roles });
     },
     likes({ id }, _, { dataSources }) {
       return dataSources.newsAPI.getLikesCount(id);
@@ -69,8 +58,8 @@ const resolvers: Resolvers<context.UserContext & DataSourceContext> = {
         user?.keycloak_id,
       );
     },
-    tags({ id }, _, { dataSources }) {
-      return dataSources.newsAPI.getTags(id);
+    tags(article, _, { dataSources }) {
+      return dataSources.newsAPI.getTags(article.id);
     },
     comments({ id }, _, { dataSources }) {
       return dataSources.newsAPI.getComments(id);
@@ -92,10 +81,10 @@ const resolvers: Resolvers<context.UserContext & DataSourceContext> = {
       return dataSources.newsAPI.createArticle({ user, roles }, input);
     },
     update(_, { id, input }, { user, roles, dataSources }) {
-      return dataSources.newsAPI.updateArticle({ user, roles }, input, id);
+      return dataSources.newsAPI.updateArticle({ user, roles }, input, id, dataSources);
     },
     remove(_, { id }, { user, roles, dataSources }) {
-      return dataSources.newsAPI.removeArticle({ user, roles }, id);
+      return dataSources.newsAPI.removeArticle({ user, roles }, id, dataSources);
     },
     like(_, { id }, { user, roles, dataSources }) {
       return dataSources.newsAPI.likeArticle({ user, roles }, id);
@@ -142,6 +131,14 @@ const resolvers: Resolvers<context.UserContext & DataSourceContext> = {
     },
     unsubscribe(_, { expo_token, tagIds }, { dataSources }) {
       return dataSources.notificationsAPI.unsubscribeTags(expo_token, tagIds);
+    },
+  },
+  AlertMutations: {
+    create(_, { message, messageEn, severity }, { user, roles, dataSources }) {
+      return dataSources.newsAPI.createAlert({ user, roles }, message, messageEn, severity);
+    },
+    remove(_, { id }, { user, roles, dataSources }) {
+      return dataSources.newsAPI.removeAlert({ user, roles }, id);
     },
   },
 };

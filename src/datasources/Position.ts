@@ -33,30 +33,37 @@ export default class PositionAPI extends dbUtils.KnexDataSource {
     filter?: gql.PositionFilter,
   ): Promise<gql.PositionPagination> {
     return this.withAccess('core:position:read', ctx, async () => {
-      let queryFilter: Partial<sql.Position> = filter || {};
+      let query = this.knex<sql.Position>('positions');
 
-      if (queryFilter.active === false) {
-        await this.withAccess('core:position:inactive:read', ctx, async () => { });
-      } else {
-        queryFilter = { active: true, ...queryFilter };
-      }
-
-      let filtered;
-
-      if (queryFilter?.committee_id === 'styr') {
-        filtered = this.knex<sql.Position>('positions').where({
+      if (filter?.committee_short_name === 'styr') {
+        query = query.where({
+          active: true,
           board_member: true,
         });
-      } else {
-        filtered = this.knex<sql.Position>('positions').where(queryFilter);
+      } else if (filter?.committee_short_name) {
+        const committee = await this.knex<sql.Committee>('committees')
+          .where({ short_name: filter.committee_short_name })
+          .first();
+        if (!committee) throw new UserInputError('committee_short_name did not exist');
+        query = this.knex<sql.Position>('positions').where(
+          {
+            active: true,
+            committee_id: committee.id,
+          },
+        );
+      } else if (filter) {
+        query = this.knex<sql.Position>('positions').where({
+          active: true,
+          ...filter,
+        });
       }
 
-      const positions = await filtered
+      const positions = await query
         .clone()
         .offset(page * perPage)
         .limit(perPage);
 
-      const totalPositions = parseInt((await filtered.clone().count({ count: '*' }))[0].count?.toString() || '0', 10);
+      const totalPositions = parseInt((await query.clone().count({ count: '*' }))[0].count?.toString() || '0', 10);
       const pageInfo = dbUtils.createPageInfo(<number>totalPositions, page, perPage);
       const positionIds = positions.map((position) => position.id);
       const mandates = await this.knex<sql.Mandate>('mandates').select('*').whereIn('position_id', positionIds);
@@ -74,16 +81,13 @@ export default class PositionAPI extends dbUtils.KnexDataSource {
     input: gql.CreatePosition,
   ): Promise<gql.Maybe<gql.Position>> {
     return this.withAccess('core:position:create', ctx, async () => {
-      const res = (await this.knex('positions').insert(input).returning('*'))[0];
+      const success = await kcClient.checkIfGroupExists(input.id);
 
-      const success = await kcClient.createPosition(res.id, false);
-
-      if (!success) {
-        await this.knex('positions').where({ id: res.id }).del();
-        throw Error('Failed to find group in Keycloak');
+      if (success) {
+        const res = (await this.knex('positions').insert(input).returning('*'))[0];
+        return convertPosition(res, []);
       }
-
-      return convertPosition(res, []);
+      throw Error('Failed to find group in Keycloak');
     });
   }
 

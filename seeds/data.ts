@@ -19,11 +19,15 @@ import insertDoors from './helpers/insertDoors';
 import insertDoorAccessPolicies from './helpers/insertDoorAccessPolicies';
 import insertMailAlias from './helpers/insertMailAlias';
 import insertProducts from './helpers/insertProducts';
+import { ArticleTag, Alert } from '~/src/types/news';
+import insertApiAccessPolicies from './helpers/insertApiAccessPolicies';
 
 // eslint-disable-next-line import/prefer-default-export
 export const seed = async (knex: Knex) => {
   // Deletes ALL existing entries
   await deleteExistingEntries(knex);
+
+  await insertApiAccessPolicies(knex);
 
   await insertMarkdowns(knex);
 
@@ -38,7 +42,21 @@ export const seed = async (knex: Knex) => {
 
   const mandateIds = await insertMandates(knex, memberIds, positionIds);
 
+  const tagIds = await insertTags(knex);
+
   const articleIds = await insertArticles(knex, memberIds, mandateIds);
+  await knex<ArticleTag>('article_tags').insert([{
+    article_id: articleIds[1],
+    tag_id: tagIds[0],
+  },
+  {
+    article_id: articleIds[1],
+    tag_id: tagIds[1],
+  },
+  {
+    article_id: articleIds[2],
+    tag_id: tagIds[1],
+  }]);
 
   await insertArticleCommentsAndLikes(knex, articleIds, memberIds);
 
@@ -47,8 +65,6 @@ export const seed = async (knex: Knex) => {
   const eventIds = await insertEvents(knex, memberIds);
 
   await insertEventComments(knex, eventIds, memberIds);
-
-  await insertTags(knex);
 
   const bookableCategoryIds = await insertBookableCategories(knex);
 
@@ -63,4 +79,11 @@ export const seed = async (knex: Knex) => {
   await insertMailAlias(knex);
 
   await insertProducts(knex);
+
+  await knex<Alert>('alerts').insert([{
+    severity: 'warning',
+    message: 'Du är i en utvecklingsmiljö',
+    message_en: 'You are in a development environment',
+    created_at: new Date(),
+  }]);
 };

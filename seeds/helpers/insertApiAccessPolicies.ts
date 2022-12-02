@@ -1,10 +1,7 @@
 import type { Knex } from 'knex';
 import { ApiAccessPolicy } from '~/src/shared';
 
-// eslint-disable-next-line import/prefer-default-export
-export const seed = async (knex: Knex) => {
-  await knex('api_access_policies').del();
-
+export default async function insertApiAccessPolicies(knex: Knex) {
   await knex<ApiAccessPolicy>('api_access_policies').insert([
     { api_name: 'core:access:api:create', role: 'dsek.infu.dwww' },
     { api_name: 'core:access:api:create', role: '*' },
@@ -18,8 +15,8 @@ export const seed = async (knex: Knex) => {
     { api_name: 'core:access:admin:read', role: 'dsek.infu.dwww' },
     { api_name: 'core:committee:read', role: '*' },
     { api_name: 'core:mandate:read', role: '*' },
-    { api_name: 'core:mandate:create', role: '*' },
-    { api_name: 'core:mandate:delete', role: '*' },
+    { api_name: 'core:mandate:create', role: '_' },
+    { api_name: 'core:mandate:delete', role: '_' },
     { api_name: 'core:position:read', role: '*' },
     { api_name: 'core:member:read', role: '*' },
     { api_name: 'core:member:create', role: '*' },
@@ -43,9 +40,8 @@ export const seed = async (knex: Knex) => {
     { api_name: 'news:article:like', role: '_' },
     { api_name: 'news:article:comment', role: '_' },
     { api_name: 'news:article:comment:delete', role: 'dsek.infu' },
-    { api_name: 'news:article:update', role: 'dsek.infu' },
-    { api_name: 'news:article:delete', role: 'dsek.infu' },
-    { api_name: 'news:article:update', role: '*' },
+    // { api_name: 'news:article:update', role: 'dsek.infu' },
+    // { api_name: 'news:article:delete', role: 'dsek.infu' },
     { api_name: 'fileHandler:news:create', role: 'dsek.infu' },
     { api_name: 'fileHandler:news:read', role: '*' },
     { api_name: 'fileHandler:news:update', role: 'dsek.infu' },
@@ -54,6 +50,14 @@ export const seed = async (knex: Knex) => {
     { api_name: 'fileHandler:documents:read', role: '*' },
     { api_name: 'fileHandler:documents:update', role: 'dsek.infu' },
     { api_name: 'fileHandler:documents:delete', role: 'dsek.infu' },
+    { api_name: 'fileHandler:files:create', role: 'dsek.infu' },
+    { api_name: 'fileHandler:files:read', role: '*' },
+    { api_name: 'fileHandler:files:update', role: 'dsek.infu' },
+    { api_name: 'fileHandler:files:delete', role: 'dsek.infu' },
+    { api_name: 'fileHandler:photos:create', role: 'dsek.infu' },
+    { api_name: 'fileHandler:photos:read', role: '*' },
+    { api_name: 'fileHandler:photos:update', role: 'dsek.infu' },
+    { api_name: 'fileHandler:photos:delete', role: 'dsek.infu' },
     { api_name: 'fileHandler:members:create', role: '_' },
     { api_name: 'fileHandler:members:read', role: '*' },
     { api_name: 'markdowns:read', role: '*' },
@@ -73,5 +77,6 @@ export const seed = async (knex: Knex) => {
     { api_name: 'webshop:read', role: '*' },
     { api_name: 'webshop:create', role: 'dsek.infu' },
     { api_name: 'webshop:use', role: '_' },
+    { api_name: 'alert', role: 'dsek.infu.dwww' },
   ]);
-};
+}

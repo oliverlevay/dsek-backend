@@ -2,6 +2,9 @@ import { Knex } from 'knex';
 import { TABLE } from '../../src/datasources/WebshopAPI';
 
 export default async function deleteExistingEntries(knex: Knex) {
+  await knex('api_access_policies').del();
+  await knex('songs').del();
+  await knex('notifications').del();
   await knex('events').del();
   await knex('articles').del();
   await knex('mandates').del();
@@ -27,4 +30,5 @@ export default async function deleteExistingEntries(knex: Knex) {
   await knex(TABLE.PRODUCT).del();
   await knex(TABLE.PRODUCT_CATEGORY).del();
   await knex(TABLE.PRODUCT_DISCOUNT).del();
+  await knex('alerts').del();
 }

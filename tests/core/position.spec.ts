@@ -19,8 +19,8 @@ const partialPositions: Partial<sql.Position>[] = [
 ];
 
 const createCommittees: sql.CreateCommittee[] = [
-  { name: 'test', name_en: 'test_en' },
-  { name: 'test2', name_en: 'test_en2' },
+  { name: 'test', name_en: 'test_en', short_name: 'test' },
+  { name: 'test2', name_en: 'test_en2', short_name: 'test2' },
 ];
 
 let committees: sql.Committee[] = [];
@@ -110,29 +110,31 @@ describe('[PositionAPI]', () => {
       id,
       name: 'created',
       name_en: 'created_en',
+      description: '',
+      description_en: '',
     };
 
     it('creates position if group exists in keycloak', async () => {
       await insertPositions();
-      sandbox.on(kcClient, 'createPosition', () => true);
+      sandbox.on(kcClient, 'checkIfGroupExists', () => true);
 
       const res = await positionAPI.createPosition({}, { ...createPosition, committee_id: committees[0].id, email: '' });
-      expect(kcClient.createPosition).to.have.been.called.once.with(id);
+      expect(kcClient.checkIfGroupExists).to.have.been.called.once.with(id);
 
       expect(res).to.deep.equal(convertPosition({
-        ...createPosition, committee_id: committees[0].id, active: true, email: '', board_member: false,
+        ...createPosition, description: '', description_en: '', committee_id: committees[0].id, active: true, email: '', board_member: false,
       }, []));
     });
 
     it('creates and removes position if group does not exists in keycloak', async () => {
-      sandbox.on(kcClient, 'createPosition', () => false);
+      sandbox.on(kcClient, 'checkIfGroupExists', () => false);
       try {
         await positionAPI.createPosition({}, createPosition);
         expect.fail('should throw Error');
       } catch (e: any) {
         expect(e.message).to.equal('Failed to find group in Keycloak');
       }
-      expect(kcClient.createPosition).to.have.been.called.once.with(id);
+      expect(kcClient.checkIfGroupExists).to.have.been.called.once.with(id);
     });
   });
 

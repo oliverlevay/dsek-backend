@@ -17,6 +17,7 @@ export interface Article {
   image_url?: string,
   published_datetime: Date,
   latest_edit_datetime?: Date,
+  removed_at?: Date,
   slug?: string,
 }
 
@@ -64,6 +65,12 @@ export type ArticleTag = {
   tag_id: UUID,
 };
 
+// Article & maybe ArticleTag
+export type ArticleWithTag = Article & {
+  article_id?: string,
+  tag_id?: string,
+};
+
 export type TokenTags = {
   id: UUID,
   token_id: UUID,
@@ -73,6 +80,15 @@ export type TokenTags = {
 export type UploadData = {
   fileUrl: string,
   uploadUrl: string
+};
+
+export type Alert = {
+  id: UUID,
+  severity: 'info' | 'warning' | 'error' | 'success',
+  message: string,
+  message_en: string,
+  created_at: Date,
+  removed_at: Date,
 };
 
 type Create<T, N extends keyof T, O extends keyof T> = Pick<T, N> & Partial<Omit<T, O>>;

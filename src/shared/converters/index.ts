@@ -1,6 +1,7 @@
 import * as sql from '../../types/database';
 import { Event } from '../../types/events';
 import * as gql from '../../types/graphql';
+import { SQLNotification } from '../../types/notifications';
 
 export function convertMandate(mandate: sql.Mandate): gql.Mandate {
   const {
@@ -29,6 +30,8 @@ gql.Position => {
   const {
     committee_id: committeeId,
     name_en: nameEn,
+    description,
+    description_en: descriptionEn,
     board_member: boardMember,
     email,
     ...rest
@@ -36,18 +39,15 @@ gql.Position => {
   let p: gql.Position = {
     boardMember,
     email: email ?? undefined,
+    description: description ?? undefined,
+    descriptionEn: descriptionEn ?? undefined,
+    nameEn: nameEn ?? undefined,
     activeMandates: activeMandates.map((mandate) => convertMandate(mandate)),
     ...rest,
   };
   if (committeeId) {
     p = {
-      committee: { id: committeeId },
-      ...p,
-    };
-  }
-  if (nameEn) {
-    p = {
-      nameEn,
+      committee: { id: committeeId, shortName: '' },
       ...p,
     };
   }
@@ -103,4 +103,21 @@ export function convertEvent(
     alarm_active: larmActive || false,
   };
   return convertedEvent;
+}
+
+export function convertNotification(
+  notification: SQLNotification,
+): gql.Notification {
+  return (
+    {
+      id: notification.id,
+      title: notification.title,
+      message: notification.message,
+      link: notification.link,
+      createdAt: notification.created_at,
+      updatedAt: notification.updated_at,
+      type: notification.type,
+      readAt: notification.read_at,
+    }
+  );
 }

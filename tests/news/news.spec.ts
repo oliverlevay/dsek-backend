@@ -15,15 +15,15 @@ const sandbox = chai.spy.sandbox();
 
 const createArticles: Partial<sql.CreateArticle>[] = [
   {
-    header: 'H1', body: 'B1', published_datetime: new Date(), header_en: 'H1_en', body_en: 'B1_en',
+    header: 'H1', body: 'B1', published_datetime: new Date('2020-06-01'), header_en: 'H1_en', body_en: 'B1_en',
   },
   {
-    header: 'H2', body: 'B2', published_datetime: new Date(), image_url: 'http://example.com/public/image.png',
+    header: 'H2', body: 'B2', published_datetime: new Date('2020-05-01'), image_url: 'http://example.com/public/image.png',
   },
-  { header: 'H3', body: 'B3', published_datetime: new Date() },
-  { header: 'H4', body: 'B4', published_datetime: new Date() },
-  { header: 'H5', body: 'B5', published_datetime: new Date() },
-  { header: 'H6', body: 'B6', published_datetime: new Date() },
+  { header: 'H3', body: 'B3', published_datetime: new Date('2020-04-01') },
+  { header: 'H4', body: 'B4', published_datetime: new Date('2020-03-01') },
+  { header: 'H5', body: 'B5', published_datetime: new Date('2020-02-01') },
+  { header: 'H6', body: 'B6', published_datetime: new Date('2020-01-01') },
 ];
 
 let articles: sql.Article[];
@@ -86,7 +86,7 @@ describe('[NewsAPI]', () => {
   describe('[getArticles]', () => {
     it('returns an ArticlePagination', async () => {
       await insertArticles();
-      const res = await newsAPI.getArticles({}, 2, 2);
+      const res = await newsAPI.getArticles({}, 3, 2);
       const articleSlice = articles.slice(4, 6);
       expect(res).to.deep.equal({
         articles: articleSlice.map((article) =>
@@ -94,7 +94,7 @@ describe('[NewsAPI]', () => {
         pageInfo: {
           totalPages: 3,
           totalItems: 6,
-          page: 2,
+          page: 3,
           perPage: 2,
           hasNextPage: false,
           hasPreviousPage: true,
@@ -155,6 +155,7 @@ describe('[NewsAPI]', () => {
         headerEn: undefined,
         imageUrl: undefined,
         latestEditDatetime: undefined,
+        removed_at: null,
         tags: [],
         comments: [],
         likers: [],
@@ -229,6 +230,7 @@ describe('[NewsAPI]', () => {
         bodyEn: undefined,
         headerEn: undefined,
         imageUrl: undefined,
+        removed_at: null,
         latestEditDatetime: undefined,
         tags: tags.map((t) => convertTag(t)),
         comments: [],
@@ -268,6 +270,7 @@ describe('[NewsAPI]', () => {
         bodyEn: undefined,
         headerEn: undefined,
         imageUrl: undefined,
+        removed_at: null,
         latestEditDatetime: undefined,
         tags: [],
         comments: [],

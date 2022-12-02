@@ -1,8 +1,14 @@
+// eslint-disable-next-line import/no-cycle
 import { UUID, ApiAccessPolicy } from '../shared';
 
 export type MailAlias = {
   id: UUID,
   position_id: string,
+  email: string,
+};
+
+export type MailInfo = {
+  student_id: string,
   email: string,
 };
 
@@ -27,7 +33,7 @@ export type Committee = {
   id: UUID,
   name: string,
   name_en: string | null,
-  short_name: string | null,
+  short_name: string,
 };
 
 export type Position = {
@@ -38,6 +44,8 @@ export type Position = {
   active: boolean,
   email: string | null,
   board_member: boolean,
+  description: string | null,
+  description_en: string | null,
 };
 
 export type Mandate = {
@@ -71,7 +79,7 @@ export type DoorAccessPolicy = {
 
 type Create<T, N extends keyof T, O extends keyof T> = Pick<T, N> & Partial<Omit<T, O>>;
 export type CreatePosition = Pick<Position, 'id' | 'name'> & Partial<Position>;
-export type CreateCommittee = Create<Committee, 'name', 'id'>;
+export type CreateCommittee = Pick<Committee, 'name' | 'short_name'> & Partial<Committee>;
 export type CreateMember = Create<Member, 'student_id', 'id'>;
 export type CreateMandate = {
   member_id: UUID,

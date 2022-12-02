@@ -7,7 +7,9 @@ export default async function insertPositions(
 ): Promise<string[]> {
   return (await knex<Position>('positions').insert([
     { id: 'dsek.cafe.dagsansv', name: 'Dagsansvarig', committee_id: committeesIds[0] },
-    { id: 'dsek.infu.dwww.mastare', name: 'DWWW-ansvarig', committee_id: committeesIds[4] },
+    {
+      id: 'dsek.infu.dwww.mastare', name: 'DWWW-ansvarig', description: 'DWWW-ansvarig leder DWWW.', committee_id: committeesIds[4],
+    },
     {
       id: 'dsek.infu.fotograf', name: 'Fotograf', name_en: 'Photographer', committee_id: committeesIds[4],
     },
@@ -22,8 +24,11 @@ export default async function insertPositions(
     { id: 'dsek.skattm.mastare', name: 'Skattmästare', committee_id: committeesIds[6] },
     { id: 'dsek.infu.artist', name: 'Artist', committee_id: committeesIds[4] },
     {
-      id: 'dsek.infu.dwww', name: 'DWWW-medlem', committee_id: committeesIds[4], board_member: true,
+      id: 'dsek.infu.dwww', name: 'DWWW-medlem', description: 'DWWW-medlem hjälper DWWW-ansvarig med arbetet inom DWWW.', committee_id: committeesIds[4], board_member: true,
     },
-    { id: 'dsek.infu.dwww-king', name: 'DWWW-king', committee_id: null },
+    { id: 'dsek.km.mastare', name: 'Källarmästare', committee_id: committeesIds[2] },
+    {
+      id: 'dsek.infu.dwww-king', name: 'DWWW-king, (INACTIVE)', committee_id: committeesIds[4], board_member: true, active: false,
+    },
   ]).returning('id')).map((v) => v.id);
 }

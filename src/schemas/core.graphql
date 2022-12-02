@@ -66,7 +66,13 @@ type MemberPagination {
 
 type MailRecipient {
   alias: String!
-  emails: [String!]
+  emailUsers: [EmailUser!]!
+}
+
+type EmailUser {
+  email: String
+  keycloakId: String!
+  studentId: String!
 }
 
 type MailAlias @key(fields: "email") {
@@ -83,6 +89,8 @@ type Position @key(fields: "id") {
   id: String!
   name: String
   nameEn: String
+  description: String
+  descriptionEn: String
   committee: Committee
   email: String
   active: Boolean
@@ -98,7 +106,7 @@ type PositionPagination {
 type Committee @key(fields: "id") {
   id: UUID!
   name: String
-  shortName: String
+  shortName: String!
 }
 
 type CommitteePagination {
@@ -173,13 +181,15 @@ input MemberFilter {
 
 input CommitteeFilter {
   id: UUID
-  name: String
+  short_name: String
 }
 
 input PositionFilter {
   id: String
   name: String
   committee_id: UUID
+  committee_short_name: String
+  active: Boolean
 }
 
 input MandateFilter {
@@ -277,6 +287,7 @@ input UpdatePosition {
 
 input CreateCommittee {
   name: String!
+  short_name: String!
 }
 
 input UpdateCommittee {
